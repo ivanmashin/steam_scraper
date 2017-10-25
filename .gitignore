@@ -1,0 +1,6 @@
+*.pyc
+*.ipynb
+*.csv
+.ipynb_checkpoints
+.vscode
+__pycache__
