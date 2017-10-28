@@ -9,6 +9,7 @@ import gzip, json
 import sys
 from main_02 import Application
 import csv
+import numpy as np
 
 
 ################################################################################################
