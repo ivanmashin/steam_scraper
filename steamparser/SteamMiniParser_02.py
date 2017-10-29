@@ -163,7 +163,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     first_time = time.time() - tme
     GameList = [[[i[0].find('span', {'class': 'title'}).get_text(), i[0].get('href'),i[0].get('data-ds-appid')], i[1], i[2]] for i in GameList]
     # Progress Bar #############################################################################
-    gui.progress(100 - filled)
+    gui.progress(99 - filled)
     try:
         print('A_E: ', expected, '\n')
     except: None
