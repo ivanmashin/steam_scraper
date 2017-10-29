@@ -1,8 +1,8 @@
 import requests
 from urllib.request import urlopen, Request
+from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 from bs4 import BeautifulSoup as bs
 from bs4 import SoupStrainer
-from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 import re
 import datetime, time
 import gzip, json
