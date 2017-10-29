@@ -163,7 +163,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     first_time = time.time() - tme
     GameList = [[[i[0].find('span', {'class': 'title'}).get_text(), i[0].get('href'),i[0].get('data-ds-appid')], i[1], i[2]] for i in GameList]
     # Progress Bar #############################################################################
-    gui.progress(100 - filled)
+    gui.progress(98.999 - filled)
     try:
         print('A_E: ', expected, '\n')
     except: None
@@ -339,7 +339,7 @@ def make_csv(GameList):
               'Median forever', 'Average forever', ' ', 'Developer', 'Publisher', 'Owners variance', 
               'Players forever variance', 'Players 2 weeks', 'Players 2 weeks variance', 'Average 2weeks', 
               'Median 2weeks', 'CCU']
-    with open('test.csv', 'w') as csvfile:
+    with open('test.csv', 'w', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=';', lineterminator='\n')
         writer.writerow(header)
         for item in GameList:
