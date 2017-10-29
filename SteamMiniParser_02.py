@@ -7,9 +7,9 @@ import re
 import datetime, time
 import gzip, json
 import sys
-from main_02 import Application
 import csv
 import numpy as np
+from main_02 import Application
 
 
 ################################################################################################
