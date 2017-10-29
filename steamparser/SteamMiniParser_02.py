@@ -339,7 +339,7 @@ def make_csv(GameList):
               'Median forever', 'Average forever', ' ', 'Developer', 'Publisher', 'Owners variance', 
               'Players forever variance', 'Players 2 weeks', 'Players 2 weeks variance', 'Average 2weeks', 
               'Median 2weeks', 'CCU']
-    with open('test.csv', 'w') as csvfile:
+    with open('test.csv', 'w', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=';', lineterminator='\n')
         writer.writerow(header)
         for item in GameList:
