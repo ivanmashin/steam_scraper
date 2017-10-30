@@ -313,7 +313,9 @@ def clean_list(to_clean):
     for item in to_clean:
         lst = [i for i in item[0]][:-1] #title, url
         lst.append(item[1]) # date
-        lst.append(item[3][16][1]) # price
+        if item[3][16][1]:
+            lst.append(item[3][16][1]) # price
+        else: lst.append(0)
         lst.append(item[2][0]) # % positive
         lst.append(str(item[2][1])) # reviews
         lst.append(item[3][5][1]) # owners
@@ -335,12 +337,33 @@ def clean_list(to_clean):
 
 def make_csv(GameList):
     GameList = clean_list(GameList)
+    tGameList = list(map(list, zip(*GameList)))
+    date = time.strftime('%d.%m.%Y')
+    tme = time.strftime('%H-%M')
+    filename = 'steamscrap_{}_{}.csv'.format(date, tme)
+    # Addintional heading info #################################################################
+    amount = len(GameList)
+    av_price = sum(list(map(lambda x: int(x), tGameList[3])))/amount
+    av_review = sum(list(map(lambda x: int(x[:-1]), tGameList[4])))/amount
+    all_owners = sum(list(map(lambda x: int(x), tGameList[6])))
+    all_players = sum(list(map(lambda x: int(x), tGameList[7])))
+    med_playtime = list(map(lambda x: int(x), tGameList[8]))       # эта характеристика получается очень кривой и вполне лишняя
+    med_playtime.sort()                                            # 
+    med_playtime = med_playtime[int(len(med_playtime)/2)]          #
+    av_playtime = sum(list(map(lambda x: int(x), tGameList[9])))/amount
+    fr_headers = ['Build date', 'Inputs', 'Amount of games', 'Average price', 'Average % of positive reviews',
+                  'Owners whole', 'Players whole', 'Median playtime', 'Average playtime']
+    firstrow = [date, 'INPUTS', amount, round(av_price,2), round(av_review,2),
+                all_owners, all_players, med_playtime, round(av_playtime,2)]     # заменить инпутс инпутами в main.py
     header = ['Title', 'URL', 'Date', 'Price', '% of positive reviews', 'Reviews', 'Owners', 'Players Forever',
               'Median forever', 'Average forever', ' ', 'Developer', 'Publisher', 'Owners variance', 
               'Players forever variance', 'Players 2 weeks', 'Players 2 weeks variance', 'Average 2weeks', 
               'Median 2weeks', 'CCU']
-    with open('test.csv', 'w', encoding='utf-8') as csvfile:
+    with open(filename, 'w', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=';', lineterminator='\n')
+        writer.writerow(fr_headers)
+        writer.writerow(firstrow)
+        writer.writerow('')
         writer.writerow(header)
         for item in GameList:
             try:
