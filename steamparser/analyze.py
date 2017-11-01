@@ -20,22 +20,28 @@ def main(csv_file):
     title, url, date, price, perc, rev, own, p_for, m_for, av_for = gamelist[:10]
     print(p_for)
     # graphs ################################################################
-    date_graph(date, av_for)
+    date_graph(date, rev)
 
-def date_graph(date, y):
+def date_graph(dates, y=None):
     # converting vars #######################################################
-    index = [[i for i,x in enumerate(date) if x==j] for j in set(date)]
-    weights = [sum([int(y[i]) for i in index[j]]) for j in range(len(index))]
-    s_dates = list(set(date))
-    mpdates = list(map(mdates.num2date, s_dates))
+    if y:
+        index = [[i for i,x in enumerate(dates) if x==j] for j in set(dates)]
+        weights = [sum([int(y[i]) for i in index[j]]) for j in range(len(index))]
+        s_dates = list(set(dates))
+        mpdates = list(map(mdates.num2date, s_dates))
+    else:
+        mpdates = list(map(mdates.num2date, dates))
+        s_dates = list(set(dates))
+        weights = None
+    bins = s_dates + [s_dates[-1]+1]
     # plotting ##############################################################
     fig = plt.figure()
     ax1 = plt.subplot2grid((1,1), (0,0))
-    ax1.hist(x=mpdates, weights=weights, histtype='stepfilled')
+    ax1.hist(x=mpdates, weights=weights, bins=bins, rwidth=0.7, histtype='bar')
     # editing plot ##########################################################
     for label in ax1.xaxis.get_ticklabels():
         label.set_rotation(45)
-    plt.xlabel('date')
+    plt.xlabel('x')
     plt.ylabel('y')
     plt.subplots_adjust(bottom = 0.24)
     plt.show()
