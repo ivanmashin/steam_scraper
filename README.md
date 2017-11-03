@@ -4,4 +4,4 @@ some info
 
 ## Output
 
-## Alanitics
+## Analytics
