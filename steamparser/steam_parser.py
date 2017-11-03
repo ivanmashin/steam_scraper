@@ -1,4 +1,3 @@
-import requests
 from urllib.request import urlopen, Request
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 from bs4 import BeautifulSoup as bs
@@ -49,7 +48,8 @@ def get_url(genre_tags, n_of_players_tags, pressed=[], page='1'):
             tag_list += ',' + genre_tags[category]
         except: 
             category3_list += ',' + n_of_players_tags[category]
-    query=urlencode({'category1': '998',
+    query=urlencode({'cc': 'us',
+                     'category1': '998',
                      'category3': category3_list,
                      'sort_by': 'Released_DESC',
                      'page': page,
@@ -296,10 +296,10 @@ def convert_date(date):
     date = p.split(date)
     if len(date) == 2:
         return False
-    date[1] = months[date[1]][0]
+    date[0] = months[date[0]][0]
     date = [int(item) for item in date]
     today = datetime.date.today()
-    released = datetime.date(date[2], date[1], date[0])
+    released = datetime.date(date[2], date[0], date[1])
     return released
 
 def convert_review(raw):
@@ -318,8 +318,9 @@ def clean_list(to_clean):
         lst = [i for i in item[0]][:-1]  # title, url
         lst.append(item[1])  # date
         if item[3][16][1]:
-            lst.append(item[3][16][1]) # price
-        else: lst.append(0)
+            price = '{}.{}'.format(item[3][16][1][:-2], item[3][16][1][-2:])
+            lst.append(price) # price
+        else: lst.append('.0')
         lst.append(item[2][0])  # % positive
         lst.append(str(item[2][1]))  # reviews
         lst.append(item[3][5][1])  # owners
@@ -345,7 +346,7 @@ def make_gamelist(GameList):
     date = time.strftime('%d.%m.%Y')
     # Addintional heading info #################################################################
     amount = len(GameList)
-    av_price = sum(list(map(lambda x: int(x), tGameList[3]))) / amount
+    av_price = sum(list(map(lambda x: float(x), tGameList[3]))) / amount
     av_review = sum(list(map(lambda x: int(x[:-1]), tGameList[4]))) / amount
     all_owners = sum(list(map(lambda x: int(x), tGameList[6])))
     all_players = sum(list(map(lambda x: int(x), tGameList[7])))
