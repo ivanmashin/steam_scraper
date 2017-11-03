@@ -8,8 +8,7 @@ import datetime, time
 import gzip, json
 import sys
 import csv
-import numpy as np
-from main_02 import Application
+from main import Application
 
 
 ################################################################################################
@@ -37,13 +36,14 @@ def get_spy_url(idi):
     url = urlunparse((sheme, netloc, path, '', query, ''))
     return url
 
+
 def get_url(genre_tags, n_of_players_tags, pressed=[], page='1'):
-    sheme='http'
-    netloc='store.steampowered.com'
+    sheme = 'http'
+    netloc = 'store.steampowered.com'
     path='/search/'
     # Query ####################################################################################
-    tag_list='-1'
-    category3_list=''
+    tag_list = '-1'
+    category3_list = ''
     for category in pressed:
         try:
             tag_list += ',' + genre_tags[category]
@@ -56,6 +56,7 @@ def get_url(genre_tags, n_of_players_tags, pressed=[], page='1'):
                      'tags': tag_list})
     url = urlunparse((sheme, netloc, path, '', query, ''))
     return url
+
 
 def get_tags():
     url = 'http://store.steampowered.com/search/?category1=998&category3=&sort_by=Released_DESC&page=1&tags=-1%27'
@@ -98,7 +99,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
                'Accept-encoding': 'gzip, deflate',
                'Accept-Language': 'en-US',
-               'Cookie': 'timezoneOffset=10800,0'}    
+               'Cookie': 'timezoneOffset=10800,0'}
     i = 1
     # ProgressBar variables ####################################################################
     days = set()
@@ -170,8 +171,8 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     print('Amount: ', len(GameList), '\n\n')
     # Adding Spy data ##########################################################################
     GameList = add_spy_info(GameList, first_time, gui)
-    make_csv(GameList)
-    return GameList
+    GameList, FirstRow = make_gamelist(GameList)
+    return GameList, FirstRow
 
 
 ################################################################################################
@@ -183,7 +184,10 @@ def add_initial_info(Row, date_closer, date_further, temp, temp_trigger, started
     for game in Row:
         # Life Create ##########################################################################
         date = game[0].find('div', {'class': 'col search_released responsive_secondrow'}).get_text()
-        life = convert_date(date)
+        try:
+            life = convert_date(date)
+        except:
+            print(game)
         game.append(life)
         # Reviews ##############################################################################
         try:
@@ -263,7 +267,7 @@ def add_spy_info(GameList, tme, gui):
         if accum >= 1:
             gui.progress(accum)
             accum = 0
-        # # Getting game data ####################################################################
+        # Getting game data ####################################################################
         idi = game[0][2]
         url = get_spy_url(idi)
         req = Request(url, headers=headers)
@@ -275,7 +279,7 @@ def add_spy_info(GameList, tme, gui):
             except: continue
         data = gzip.decompress(response.read())
         info = json.loads(data.decode())
-        # Adding game data #######################################################################
+        # Adding game data #####################################################################
         game.append(list(info.items()))
     return GameList
 
@@ -311,62 +315,44 @@ def clean_list(to_clean):
     # Clean GameList ###########################################################################
     target_list = []
     for item in to_clean:
-        lst = [i for i in item[0]][:-1] #title, url
-        lst.append(item[1]) # date
+        lst = [i for i in item[0]][:-1]  # title, url
+        lst.append(item[1])  # date
         if item[3][16][1]:
             lst.append(item[3][16][1]) # price
         else: lst.append(0)
-        lst.append(item[2][0]) # % positive
-        lst.append(str(item[2][1])) # reviews
-        lst.append(item[3][5][1]) # owners
-        lst.append(item[3][7][1]) # players forever
-        lst.append(item[3][13][1]) # median forever
-        lst.append(item[3][11][1]) # average forever
+        lst.append(item[2][0])  # % positive
+        lst.append(str(item[2][1]))  # reviews
+        lst.append(item[3][5][1])  # owners
+        lst.append(item[3][7][1])  # players forever
+        lst.append(item[3][13][1])  # median forever
+        lst.append(item[3][11][1])  # average forever
         lst.append(' ')
-        lst.append(item[3][2][1]) # developer
-        lst.append(item[3][3][1]) # publisher
-        lst.append(item[3][6][1]) # owners variance
-        lst.append(item[3][8][1]) # players forever variance
-        lst.append(item[3][9][1]) # players 2 week
-        lst.append(item[3][10][1]) # -//- variance
-        lst.append(item[3][12][1]) # average 2 weeks
-        lst.append(item[3][14][1]) # median 2 weeks
-        lst.append(item[3][15][1]) # ccu
+        lst.append(item[3][2][1])  # developer
+        lst.append(item[3][3][1])  # publisher
+        lst.append(item[3][6][1])  # owners variance
+        lst.append(item[3][8][1])  # players forever variance
+        lst.append(item[3][9][1])  # players 2 week
+        lst.append(item[3][10][1])  # -//- variance
+        lst.append(item[3][12][1])  # average 2 weeks
+        lst.append(item[3][14][1])  # median 2 weeks
+        lst.append(item[3][15][1])  # ccu
         target_list.append(lst)
     return(target_list)
 
-def make_csv(GameList):
+def make_gamelist(GameList):
     GameList = clean_list(GameList)
     tGameList = list(map(list, zip(*GameList)))
     date = time.strftime('%d.%m.%Y')
-    tme = time.strftime('%H-%M')
-    filename = 'steamscrap_{}_{}.csv'.format(date, tme)
     # Addintional heading info #################################################################
     amount = len(GameList)
-    av_price = sum(list(map(lambda x: int(x), tGameList[3])))/amount
-    av_review = sum(list(map(lambda x: int(x[:-1]), tGameList[4])))/amount
+    av_price = sum(list(map(lambda x: int(x), tGameList[3]))) / amount
+    av_review = sum(list(map(lambda x: int(x[:-1]), tGameList[4]))) / amount
     all_owners = sum(list(map(lambda x: int(x), tGameList[6])))
     all_players = sum(list(map(lambda x: int(x), tGameList[7])))
     med_playtime = list(map(lambda x: int(x), tGameList[8]))       # эта характеристика получается очень кривой и вполне лишняя
     med_playtime.sort()                                            # 
     med_playtime = med_playtime[int(len(med_playtime)/2)]          #
-    av_playtime = sum(list(map(lambda x: int(x), tGameList[9])))/amount
-    fr_headers = ['Build date', 'Inputs', 'Amount of games', 'Average price', 'Average % of positive reviews',
-                  'Owners whole', 'Players whole', 'Median playtime', 'Average playtime']
+    av_playtime = sum(list(map(lambda x: int(x), tGameList[9]))) / amount
     firstrow = [date, 'INPUTS', amount, round(av_price,2), round(av_review,2),
                 all_owners, all_players, med_playtime, round(av_playtime,2)]     # заменить инпутс инпутами в main.py
-    header = ['Title', 'URL', 'Date', 'Price', '% of positive reviews', 'Reviews', 'Owners', 'Players Forever',
-              'Median forever', 'Average forever', ' ', 'Developer', 'Publisher', 'Owners variance', 
-              'Players forever variance', 'Players 2 weeks', 'Players 2 weeks variance', 'Average 2weeks', 
-              'Median 2weeks', 'CCU']
-    with open(filename, 'w', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile, delimiter=';', lineterminator='\n')
-        writer.writerow(fr_headers)
-        writer.writerow(firstrow)
-        writer.writerow('')
-        writer.writerow(header)
-        for item in GameList:
-            try:
-                writer.writerow(item)
-            except: print(item)
-    return GameList
+    return GameList, firstrow
