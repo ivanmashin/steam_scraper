@@ -12,16 +12,13 @@ import tkinter.filedialog
 from functools import partial
 import time
 import steam_parser as smp
-import csv
-from openpyxl import Workbook
-from openpyxl.styles import Border, Side, Font, PatternFill
-
-import sys
+import exporters as exps
 
 DEFAULT_DAYS = '15-90'
 DEFAULT_REVIEWS = 100
 MAX_DAYS = 1825
 MAX_REVIEWS = 100000
+SAVEAS_VALUES = ["xlsx", "csv ; (Excel)", "csv /t (GDrive)", "json"]
 
 
 class Application(tk.Frame):
@@ -29,7 +26,6 @@ class Application(tk.Frame):
     released_days_var = DEFAULT_DAYS
     reviews_var = DEFAULT_REVIEWS
     tags_var = ''
-    pb_var = 0
     directory = '/'
     tags = ["Action", "Adventure", "Casual", "Massively Multiplayer",
             "Racing", "RPG", "Simulation", "Sports", "Strategy",
@@ -37,13 +33,6 @@ class Application(tk.Frame):
             "Co-op", "Online Co-op", "Local Co-op", "Shared/Split Screen",
             "Demos", "Steam Workshop",
             "VR Only", "VR Supported"]
-    # Headers for file saving
-    info_header = ['Build date', 'Inputs', 'Amount of games', 'Average price', 'Average % of positive reviews',
-                   'Owners whole', 'Players whole', 'Median playtime', 'Average playtime']
-    game_data_header = ['Title', 'URL', 'Date', 'Price', '% of positive reviews', 'Reviews', 'Owners',
-                        'Players Forever', 'Median forever', 'Average forever', ' ', 'Developer', 'Publisher',
-                        'Owners variance', 'Players forever variance', 'Players 2 weeks', 'Players 2 weeks variance',
-                        'Average 2weeks', 'Median 2weeks', 'CCU']
     gl = None
     fr = None
 
@@ -54,17 +43,10 @@ class Application(tk.Frame):
         style.configure('TButton', padding=2, width=6)
 
         Application.indie_switch_bool = tk.IntVar(value=1)
-
-        Application.save_xlsx_bool = tk.IntVar(value=1)
-
         Application.released_days_var = tk.StringVar(value=DEFAULT_DAYS)
-        #Application.released_days_var.trace("w", callback=None)
-
         Application.reviews_var = tk.StringVar(value=DEFAULT_REVIEWS)
         Application.reviews_var.trace('w', partial(self.int_entry_callback,
                                                    var=Application.reviews_var, minval=0, maxval=MAX_REVIEWS))
-
-        Application.pb_var = tk.IntVar()
 
         self.grid()
         self.create_widgets()
@@ -75,10 +57,6 @@ class Application(tk.Frame):
         self.indie_switch = ttk.Checkbutton(text="Only indie",
                                             variable=Application.indie_switch_bool, onvalue=1, offvalue=0)
         self.indie_switch.grid(row=UI_ROW, column=0)
-
-        self.save_switch = ttk.Checkbutton(text="Save as .xlsx",
-                                           variable=Application.save_xlsx_bool, onvalue=1, offvalue=0)
-        self.save_switch.grid(row=UI_ROW, column=1)
 
         UI_ROW += 1
         self.period_label = ttk.Label(text="Release period (days)")
@@ -103,17 +81,24 @@ class Application(tk.Frame):
         self.add_tags(self.tags_listbox)
 
         UI_ROW += 1
+        self.save_as_label = ttk.Label(text="Save As: ")
+        self.save_as_label.grid(row=UI_ROW, column=0, sticky=tk.E)
+        self.save_method_cb = ttk.Combobox(values=SAVEAS_VALUES, width=17)
+        self.save_method_cb.set(SAVEAS_VALUES[0])
+        self.save_method_cb.grid(row=UI_ROW, column=1, sticky=tk.W)
+
+        UI_ROW += 1
         self.status_label = ttk.Label(text="", font='TkDefaultFont 9 bold')
         self.status_label.grid(row=UI_ROW, column=1, sticky=tk.W)
 
         self.get_button = ttk.Button(text="GET", style='TButton', command=self.get_apps)
         self.get_button.grid(row=UI_ROW, column=0, sticky=tk.W)
 
-        self.save_button = ttk.Button(text="SAVE", state=tk.DISABLED, style='TButton', command=self.save_copy)
+        self.save_button = ttk.Button(text="SAVE", state=tk.DISABLED, style='TButton', command=self.save)
         self.save_button.grid(row=UI_ROW, column=1, sticky=tk.E)
 
         UI_ROW += 1
-        self.progress_bar = ttk.Progressbar(length=240, variable=Application.pb_var)
+        self.progress_bar = ttk.Progressbar(length=240)
         self.progress_bar.grid(row=UI_ROW, columnspan=2)
 
         UI_ROW += 1
@@ -174,114 +159,50 @@ class Application(tk.Frame):
 
         # Call functions here
         Application.gl, Application.fr = smp.get_suitable_apps(b_indie, period, tags, int(reviews), gui=self)
-        self.progress_bar.step()
         self.status_label.config(text="Completed", foreground='black')
         self.save_button.state(['!disabled'])
 
     def save(self):
         initfile = 'steamscrap_' + time.strftime('%d-%m-%Y_%H-%M')
-        ftypes = (('xlsx files', '*.xlsx'), ('all files', '*.*'))
-        # This func returns the opened file
-        f = tk.filedialog.asksaveasfile(initialdir=Application.directory, defaultextension='.xlsx',
-                                        filetypes=ftypes, initialfile=initfile)
-        if f is None:
-            return
-
-        # Keep last dir
-        last_dir_id = f.name.rfind('/')
-        Application.directory = f.name[0:last_dir_id]
-        print(Application.directory)
-
-        f.close()
-
-    def save_copy(self):
-        initfile = 'steamscrap_' + time.strftime('%d-%m-%Y_%H-%M')
-        # Switch
-        b_save_xlsx = Application.save_xlsx_bool.get()
-        if (b_save_xlsx):
+        # Opens dialog with this parameters
+        saveas = SAVEAS_VALUES[self.save_method_cb.current()]
+        if saveas == SAVEAS_VALUES[0]:  # xlsx
             ftypes = (('xlsx files', '*.xlsx'), ('all files', '*.*'))
             extension = '.xlsx'
-        else:
+        elif (saveas == SAVEAS_VALUES[1]) or (saveas == SAVEAS_VALUES[2]):  # csv
             ftypes = (('csv files', '*.csv'), ('all files', '*.*'))
             extension = '.csv'
+            if saveas == SAVEAS_VALUES[1]:  # semicolon delimiter
+                sep = ';'
+                initfile += '_sc'
+            elif saveas == SAVEAS_VALUES[2]:  # tab delimiter
+                sep = '\t'
+                initfile += '_tab'
+        elif saveas == SAVEAS_VALUES[3]:  # json
+            ftypes = (('json files', '*.json'), ('all files', '*.*'))
+            extension = '.json'
 
         f = tk.filedialog.asksaveasfile(initialdir=Application.directory, defaultextension=extension,
                                         filetypes=ftypes, initialfile=initfile)
         if f is None:
             return
 
-        # Keep last dir
+        # Keep last dir in current session
         last_dir_id = f.name.rfind('/')
         Application.directory = f.name[0:last_dir_id+1]
         print(Application.directory)
 
-        # ---TEMP---
-        lst1 = ['date', 'inputs']
-        game_lst = [['game1', 'developer', 'price'],
-                    ['game2', 'developer', 'price'],
-                    ['game3', 'developer', 'price']]
-        # ---TEMP---
-        if (b_save_xlsx):
-            Application.save_xlsx(self, filename=Application.directory+initfile, 
-                                  table_info=Application.fr, games_list=Application.gl)
-        else:
-            Application.save_csv(self, filename=Application.directory+initfile, 
-                                 table_info=Application.fr, games_list=Application.gl)
+        # Call save funcs
+        if saveas == SAVEAS_VALUES[0]:  # xlsx
+            exps.save_xlsx(filename=Application.directory+initfile, 
+                           table_info=Application.fr, games_list=Application.gl)
+        elif (saveas == SAVEAS_VALUES[1]) or (saveas == SAVEAS_VALUES[2]):  # csv
+            exps.save_csv(filename=Application.directory+initfile, 
+                          table_info=Application.fr, games_list=Application.gl, separator=sep)
+        elif saveas == SAVEAS_VALUES[3]:  # json
+            exps.save_json(filename=Application.directory+initfile)
+
         f.close()
-
-    def save_xlsx(self, filename, table_info, games_list):
-        """
-        pass filename without extension (.xlsx)
-        """
-        wb = Workbook()
-        ws1 = wb.active
-        ws1.title = "ScrapList"
-
-        # Cell style
-        border = Border(left=Side(style='thin'),
-                        right=Side(style='thin'),
-                        top=Side(style='thin'),
-                        bottom=Side(style='thin'))
-        font = Font(name='Arial', size=11)
-        fill = PatternFill("solid", fgColor="007FFF")
-
-        # Create headers
-        ws1.append(Application.info_header)
-        ws1.append(table_info)
-        ws1.append([])
-        ws1.append(Application.game_data_header)
-        header_rows = 4
-        for col_iter in range(1, len(Application.game_data_header)+1):
-            ws1.cell(row=header_rows, column=col_iter).fill = fill
-
-        # Add games info
-        for game in games_list:
-            ws1.append(game)  # Write info in row (pass list)
-
-        # Apply style
-        num_rows = header_rows + len(games_list) + 1
-        num_cols = len(Application.game_data_header)
-        for row_iter in range(header_rows, num_rows):
-            for col_iter in range(1, num_cols+1):
-                cell = ws1.cell(row=row_iter, column=col_iter)
-                cell.border = border
-                cell.font = font
-        print("xlsx save dir: ", filename+'.xlsx')
-        wb.save(filename=filename+'.xlsx')
-
-    def save_csv(self, filename, table_info, games_list):
-        with open(filename+'.csv', 'w', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile, delimiter='\t', lineterminator='\n')
-            writer.writerow(Application.info_header)
-            writer.writerow(table_info)
-            writer.writerow('')
-            writer.writerow(Application.game_data_header)
-            for item in games_list:
-                try:
-                    writer.writerow(item)
-                except:
-                    print(sys.exc_info())
-                    print(item)
 
     def progress(self, number):
         self.progress_bar.step(number)
@@ -304,7 +225,7 @@ def main():
     global root
     root = tk.Tk()
     root.title("Steam scraper")
-    root.geometry('242x310')
+    root.geometry('250x330')
     #root.iconbitmap('icon.ico')
     app = Application(master=root)
     app.mainloop()
