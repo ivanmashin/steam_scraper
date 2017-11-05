@@ -22,12 +22,11 @@ SAVEAS_VALUES = ["xlsx", "csv ; (Excel)", "csv /t (GDrive)", "json"]
 
 
 class Application(tk.Frame):
-    indie_switch_bool = 0
     released_days_var = DEFAULT_DAYS
     reviews_var = DEFAULT_REVIEWS
     tags_var = ''
     directory = '/'
-    tags = ["Action", "Adventure", "Casual", "Massively Multiplayer",
+    tags = ["Indie", "Action", "Adventure", "Casual", "Massively Multiplayer",
             "Racing", "RPG", "Simulation", "Sports", "Strategy",
             "Single-player", "Multi-player", "Online Multi-Player", "Local Multi-Player",
             "Co-op", "Online Co-op", "Local Co-op", "Shared/Split Screen",
@@ -42,7 +41,6 @@ class Application(tk.Frame):
         style = ttk.Style()
         style.configure('TButton', padding=2, width=6)
 
-        Application.indie_switch_bool = tk.IntVar(value=1)
         Application.released_days_var = tk.StringVar(value=DEFAULT_DAYS)
         Application.reviews_var = tk.StringVar(value=DEFAULT_REVIEWS)
         Application.reviews_var.trace('w', partial(self.int_entry_callback,
@@ -54,11 +52,6 @@ class Application(tk.Frame):
     def create_widgets(self):
         """Creates all GUI"""
         UI_ROW = 0
-        self.indie_switch = ttk.Checkbutton(text="Only indie",
-                                            variable=Application.indie_switch_bool, onvalue=1, offvalue=0)
-        self.indie_switch.grid(row=UI_ROW, column=0)
-
-        UI_ROW += 1
         self.period_label = ttk.Label(text="Release period (days)")
         self.period_label.grid(row=UI_ROW, column=0, sticky=tk.E)
         self.period_entry = ttk.Entry(textvariable=Application.released_days_var)
@@ -113,7 +106,7 @@ class Application(tk.Frame):
     def get_apps(self):
         """Get stats for specified games and convert it into .xlsx format.
         3 steps:
-            1. get_suitable_apps(b_indie, period_range, reviews_num, tags_list, gui) - get games from Steam
+            1. get_suitable_apps(period_range, reviews_num, tags_list, gui) - get games from Steam
             2. get_app_stats(appid) - stats for game from SteamSpy
             3. parse_to_xlsx(apps_data) - write game stats in Excel format
         """
@@ -149,7 +142,6 @@ class Application(tk.Frame):
             self.status_label.config(text="Invalid input", foreground='red')
             return
 
-        b_indie = Application.indie_switch_bool
         selected_tags = self.tags_listbox.curselection()
         tags = []
         for i in selected_tags:
@@ -158,7 +150,7 @@ class Application(tk.Frame):
         print("GET")
 
         # Call functions here
-        Application.gl, Application.fr = smp.get_suitable_apps(b_indie, period, tags, int(reviews), gui=self)
+        Application.gl, Application.fr = smp.get_suitable_apps(period, tags, int(reviews), gui=self)
         self.status_label.config(text="Completed", foreground='black')
         self.save_button.state(['!disabled'])
 

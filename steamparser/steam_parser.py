@@ -7,7 +7,7 @@ import datetime, time
 import gzip, json
 import sys
 import csv
-from main import Application
+from steam_scraper_gui import Application
 
 
 ################################################################################################
@@ -81,13 +81,11 @@ def get_tags():
 #    MAIN STEAM BODY     #######################################################################
 ################################################################################################
 @ timer_d
-def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
+def get_suitable_apps(dates, tags, n_of_reviews=0, gui=None):
     # Inputs ###################################################################################
     print(dates)
     date_closer = int(dates[0])
     date_further = int(dates[1])
-    if indie_bool:
-        tags.append('Indie')
     # Dependancies #############################################################################
     genre_tags, n_of_players_tags = get_tags()
     page = '1'
@@ -164,7 +162,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     first_time = time.time() - tme
     GameList = [[[i[0].find('span', {'class': 'title'}).get_text(), i[0].get('href'),i[0].get('data-ds-appid')], i[1], i[2]] for i in GameList]
     # Progress Bar #############################################################################
-    gui.progress(98.999 - filled)
+    gui.progress(99.999 - filled)
     try:
         print('A_E: ', expected, '\n')
     except: None
