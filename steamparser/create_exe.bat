@@ -1,1 +1,1 @@
-pyinstaller --onefile --noconsole main.py
+pyinstaller --onefile --name SteamScraper --noconsole steam_scraper_gui.py

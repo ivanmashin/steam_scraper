@@ -8,6 +8,7 @@ setup(
     install_requires=[
         'requests',
         'beautifulsoup4',
-        'lxml'
+        'lxml',
+        'openpyxl'
     ]
 )
