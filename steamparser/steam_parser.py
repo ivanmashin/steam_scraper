@@ -17,7 +17,7 @@ def timer_d(func):
     def tmp(*args, **kwargs):
         t = time.time()
         res = func(*args, **kwargs)
-        print('Time: ', time.time()-t)
+        print('Time {}: '.format(func.__name__), time.time()-t)
         return res
     return tmp
 
