@@ -4,10 +4,8 @@ from bs4 import BeautifulSoup as bs
 from bs4 import SoupStrainer
 import re
 import datetime, time
-import gzip, json
-import sys
-import csv
-from main import Application
+import gzip 
+import json
 
 
 ################################################################################################
@@ -39,21 +37,21 @@ def get_spy_url(idi):
 def get_url(genre_tags, n_of_players_tags, pressed=[], page='1'):
     sheme = 'http'
     netloc = 'store.steampowered.com'
-    path='/search/'
+    path = '/search/'
     # Query ####################################################################################
     tag_list = '-1'
     category3_list = ''
     for category in pressed:
         try:
             tag_list += ',' + genre_tags[category]
-        except: 
+        except:
             category3_list += ',' + n_of_players_tags[category]
-    query=urlencode({'cc': 'us',
-                     'category1': '998',
-                     'category3': category3_list,
-                     'sort_by': 'Released_DESC',
-                     'page': page,
-                     'tags': tag_list})
+    query = urlencode({'cc': 'us',
+                       'category1': '998',
+                       'category3': category3_list,
+                       'sort_by': 'Released_DESC',
+                       'page': page,
+                       'tags': tag_list})
     url = urlunparse((sheme, netloc, path, '', query, ''))
     return url
 
@@ -81,13 +79,11 @@ def get_tags():
 #    MAIN STEAM BODY     #######################################################################
 ################################################################################################
 @ timer_d
-def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
+def get_suitable_apps(dates, tags, n_of_reviews=0, gui=None):
     # Inputs ###################################################################################
     print(dates)
     date_closer = int(dates[0])
     date_further = int(dates[1])
-    if indie_bool:
-        tags.append('Indie')
     # Dependancies #############################################################################
     genre_tags, n_of_players_tags = get_tags()
     page = '1'
@@ -113,8 +109,8 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     # Selecting games ##########################################################################
     while True:
         # Getting html #########################################################################
-        url = get_url(genre_tags, n_of_players_tags, pressed = tags, page=page)
-        req = Request(url, headers = headers)
+        url = get_url(genre_tags, n_of_players_tags, pressed=tags, page=page)
+        req = Request(url, headers=headers)
         try:
             response = urlopen(req)
         except: print('Error while connecting to the Internet')
@@ -125,8 +121,8 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
         Row = [[item] for item in Row]
         Row, temp_bug, temp_trigger, started_trigger = add_initial_info(Row, date_closer, date_further,
                                                                         temp_bug, temp_trigger, started_trigger, n_of_reviews)
-        print(i, ': ' ,len(Row))
-        i+=1
+        print(i, ': ', len(Row))
+        i += 1
         # Progress Bar #########################################################################
         for game in Row:
             if len(days) < min(7, diff):
@@ -138,7 +134,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
                     temp = [item[1] for item in (GameList+Row)]
                     for item in days:
                         filled += temp.count(item)
-                    expected = filled/min(7,diff)*diff
+                    expected = filled/min(7, diff) * diff
                     filled += 100/(expected - len(GameList) - len(Row))
                     gui.progress(filled - 7)
                     #filled += (expected - len(GameList) - 7)
@@ -164,7 +160,7 @@ def get_suitable_apps(indie_bool, dates, tags, n_of_reviews=0, gui=None):
     first_time = time.time() - tme
     GameList = [[[i[0].find('span', {'class': 'title'}).get_text(), i[0].get('href'),i[0].get('data-ds-appid')], i[1], i[2]] for i in GameList]
     # Progress Bar #############################################################################
-    gui.progress(98.999 - filled)
+    gui.progress(99.999 - filled)
     try:
         print('A_E: ', expected, '\n')
     except: None
@@ -302,6 +298,7 @@ def convert_date(date):
     released = datetime.date(date[2], date[0], date[1])
     return released
 
+
 def convert_review(raw):
     reviews = raw.attrs['data-store-tooltip']
     regex_p = re.search(r'(\D?)+(Mixed<br>|Positive<br>|Negative<br>)\d+', reviews)
@@ -310,6 +307,7 @@ def convert_review(raw):
     dir(re.search(p, reviews))
     number = re.search(p, reviews).group().split(' ')[0]
     return [percent+'%', int(number)]
+
 
 def clean_list(to_clean):
     # Clean GameList ###########################################################################
@@ -340,6 +338,7 @@ def clean_list(to_clean):
         target_list.append(lst)
     return(target_list)
 
+
 def make_gamelist(GameList):
     GameList = clean_list(GameList)
     tGameList = list(map(list, zip(*GameList)))
@@ -351,9 +350,9 @@ def make_gamelist(GameList):
     all_owners = sum(list(map(lambda x: int(x), tGameList[6])))
     all_players = sum(list(map(lambda x: int(x), tGameList[7])))
     med_playtime = list(map(lambda x: int(x), tGameList[8]))       # эта характеристика получается очень кривой и вполне лишняя
-    med_playtime.sort()                                            # 
+    med_playtime.sort()                                            #
     med_playtime = med_playtime[int(len(med_playtime)/2)]          #
     av_playtime = sum(list(map(lambda x: int(x), tGameList[9]))) / amount
-    firstrow = [date, 'INPUTS', amount, round(av_price,2), round(av_review,2),
-                all_owners, all_players, med_playtime, round(av_playtime,2)]     # заменить инпутс инпутами в main.py
+    firstrow = [date, 'INPUTS', amount, round(av_price, 2), round(av_review, 2),
+                all_owners, all_players, med_playtime, round(av_playtime, 2)]     # заменить инпутс инпутами в main.py
     return GameList, firstrow
