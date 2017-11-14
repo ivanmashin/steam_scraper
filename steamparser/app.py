@@ -152,7 +152,9 @@ class Application(tk.Frame):
 
         # Call functions here
         self.status_label.config(text="Getting data from Steam")
-        Application.gl, Application.fr = smp.get_suitable_apps(period, tags, int(reviews), gui=self)
+        Application.gl = smp.get_suitable_apps(period, tags, int(reviews), gui=self)
+        self.status_label.config(text="Getting data from SteamSpy")
+        Application.gl, Application.fr = smp.add_spy_info(Application.gl, gui=self)
         #self.status_label.config(text="Adding extra info")
         self.status_label.config(text="Completed: " + str(len(Application.gl)) + " games")
         self.save_button.state(['!disabled'])

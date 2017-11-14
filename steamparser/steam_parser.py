@@ -102,7 +102,6 @@ def get_suitable_apps(dates, tags, n_of_reviews=0, gui=None):
     accum = 0
     done = False
     diff = date_further - date_closer
-    trigger = False
     filled = 7
     gui.progress(7)
     tme = time.time()
@@ -157,7 +156,6 @@ def get_suitable_apps(dates, tags, n_of_reviews=0, gui=None):
             break
         else: page = str(int(page)+1)
     # Completing list ##########################################################################
-    first_time = time.time() - tme
     GameList = [[[i[0].find('span', {'class': 'title'}).get_text(), i[0].get('href'),i[0].get('data-ds-appid')], i[1], i[2]] for i in GameList]
     # Progress Bar #############################################################################
     gui.progress(99.999 - filled)
@@ -166,9 +164,9 @@ def get_suitable_apps(dates, tags, n_of_reviews=0, gui=None):
     except: None
     print('Amount: ', len(GameList), '\n\n')
     # Adding Spy data ##########################################################################
-    GameList = add_spy_info(GameList, first_time, gui)
-    GameList, FirstRow = make_gamelist(GameList)
-    return GameList, FirstRow
+    # GameList = add_spy_info(GameList, gui)
+    # GameList, FirstRow = make_gamelist(GameList)
+    return GameList#, FirstRow
 
 
 ################################################################################################
@@ -246,17 +244,14 @@ def check_date(date, date_closer, date_further):
 #    ADDING SPY DATA     #######################################################################
 ################################################################################################
 @timer_d
-def add_spy_info(GameList, tme, gui):
+def add_spy_info(GameList, gui):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
                 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
                'Accept-encoding': 'gzip',
                'Accept-Language': 'en-US'}
     # ProgressBar data #########################################################################
     accum = 0
-    t = time.time()
     percent = 1/len(GameList)*100
-    filled = False
-    calculated = False
     for game in GameList:
         # ProgressBar data #####################################################################
         accum += percent
@@ -277,7 +272,8 @@ def add_spy_info(GameList, tme, gui):
         info = json.loads(data.decode())
         # Adding game data #####################################################################
         game.append(list(info.items()))
-    return GameList
+    GameList, FirstRow = make_gamelist(GameList)
+    return GameList, FirstRow
 
 
 ################################################################################################
